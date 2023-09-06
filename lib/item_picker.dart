@@ -11,9 +11,43 @@ typedef ItemBuilder<T> = Widget Function(BuildContext context, T item);
 typedef CheckboxItemBuilder<T> = Widget Function(
     BuildContext context, T item, bool checked);
 
+Future<T?> showAsyncItemPicker<T>({
+  required BuildContext context,
+  bool autofocus = false,
+  required Future<List<T>> Function(BuildContext context) builder,
+  OnItemPicked<T>? onItemPicked,
+  ItemFilter<T>? itemFilter,
+  ItemBuilder<T>? itemBuilder,
+}) {
+  return showDialog(
+      context: context,
+      builder: (context) => Dialog(
+            child: FutureBuilder<List<T>>(
+              future: builder(context),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Error'));
+                }
+                if (!snapshot.hasData) {
+                  return const Center(
+                      child: CircularProgressIndicator.adaptive());
+                }
+                return ItemPicker<T>(
+                  autofocus: autofocus,
+                  items: snapshot.data!,
+                  onItemPicked: onItemPicked,
+                  itemFilter: itemFilter,
+                  itemBuilder: itemBuilder,
+                );
+              },
+            ),
+          ));
+}
+
 Future<T?> showItemPicker<T>({
   required BuildContext context,
-  List<T> items = const [],
+  bool autofocus = false,
+  required List<T> items,
   OnItemPicked<T>? onItemPicked,
   ItemFilter<T>? itemFilter,
   ItemBuilder<T>? itemBuilder,
@@ -22,6 +56,7 @@ Future<T?> showItemPicker<T>({
       context: context,
       builder: (context) => Dialog(
             child: ItemPicker<T>(
+              autofocus: autofocus,
               items: items,
               onItemPicked: onItemPicked,
               itemFilter: itemFilter,
@@ -33,11 +68,13 @@ Future<T?> showItemPicker<T>({
 class ItemPicker<T> extends StatefulWidget {
   const ItemPicker(
       {super.key,
-      this.items = const [],
+      this.autofocus = false,
+      required this.items,
       this.onItemPicked,
       this.itemFilter,
       this.itemBuilder});
 
+  final bool autofocus;
   final List<T> items;
   final OnItemPicked<T>? onItemPicked;
   final ItemFilter<T>? itemFilter;
@@ -54,7 +91,7 @@ class _ItemPickerState<T> extends State<ItemPicker<T>> {
 
   List<T> get items => widget.items
       .where(
-          (element) => widget.itemFilter?.call(element, filterString) ?? true)
+          (element) => widget.itemFilter?.call(element, filterString) ?? false)
       .toList();
 
   @override
@@ -63,6 +100,7 @@ class _ItemPickerState<T> extends State<ItemPicker<T>> {
       children: [
         if (widget.itemFilter != null)
           TextField(
+            autofocus: widget.autofocus,
             onChanged: (value) {
               /// Debounce the filter
               timer?.cancel();
@@ -71,6 +109,19 @@ class _ItemPickerState<T> extends State<ItemPicker<T>> {
                   filterString = value;
                 });
               });
+            },
+            onSubmitted: (value) {
+              final item = widget.items
+                  .where((element) =>
+                      widget.itemFilter?.call(element, value) ?? false)
+                  .firstOrNull;
+
+              if (item != null) {
+                if (widget.onItemPicked == null) {
+                  return Navigator.pop(context, item);
+                }
+                widget.onItemPicked?.call(item);
+              }
             },
             decoration: const InputDecoration(
               hintText: 'Search',
