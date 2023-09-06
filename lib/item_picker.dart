@@ -14,7 +14,7 @@ typedef CheckboxItemBuilder<T> = Widget Function(
 Future<T?> showAsyncItemPicker<T>({
   required BuildContext context,
   bool autofocus = false,
-  required Future<List<T>> Function(BuildContext context) builder,
+  required Future<List<T>> future,
   OnItemPicked<T>? onItemPicked,
   ItemFilter<T>? itemFilter,
   ItemBuilder<T>? itemBuilder,
@@ -23,7 +23,7 @@ Future<T?> showAsyncItemPicker<T>({
       context: context,
       builder: (context) => Dialog(
             child: FutureBuilder<List<T>>(
-              future: builder(context),
+              future: future,
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(child: Text('Error'));

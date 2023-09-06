@@ -58,10 +58,8 @@ class _HomeState extends State<Home> {
           onPressed: () => showAsyncItemPicker(
                   autofocus: true,
                   context: context,
-                  builder: (context) async {
-                    await Future.delayed(const Duration(seconds: 1));
-                    return items;
-                  },
+                  future:
+                      Future.delayed(const Duration(seconds: 1), () => items),
                   itemFilter: itemFilter,
                   itemBuilder: itemBuilder)
               .then((value) => setState(() => pickedItem = value)),
