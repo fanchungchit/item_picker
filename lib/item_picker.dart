@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+typedef Builder = Widget Function(BuildContext context, Widget child);
 typedef OnItemPicked<T> = void Function(T item);
 typedef OnItemsPicked<T> = void Function(List<T> items);
 typedef ItemFilter<T> = bool Function(T item, String filter);
@@ -14,6 +15,7 @@ typedef AsyncItems<T> = Future<List<T>>;
 
 Future<T?> showAsyncItemPicker<T>({
   required BuildContext context,
+  Builder? builder,
   BoxConstraints? constraints,
   bool autofocus = false,
   required AsyncItems<T> future,
@@ -27,23 +29,22 @@ Future<T?> showAsyncItemPicker<T>({
             child: FutureBuilder<List<T>>(
               future: future,
               builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Container(
-                    constraints: constraints,
-                    child: const Center(child: Text('Error')),
-                  );
-                }
-                if (!snapshot.hasData) {
-                  return Container(
-                    constraints: constraints,
-                    child: const Center(
-                        child: CircularProgressIndicator.adaptive()),
-                  );
-                }
+                // if (snapshot.hasError) {
+                //   return Container(
+                //       constraints: constraints,
+                //       child: const Center(child: Text('Error')));
+                // }
+                // if (!snapshot.hasData) {
+                //   return Container(
+                //     constraints: constraints,
+                //     child: const Center(
+                //         child: CircularProgressIndicator.adaptive()),
+                //   );
+                // }
                 return ItemPicker<T>(
                   constraints: constraints,
                   autofocus: autofocus,
-                  items: snapshot.data!,
+                  items: snapshot.data ?? [],
                   onItemPicked: onItemPicked,
                   itemFilter: itemFilter,
                   itemBuilder: itemBuilder,
