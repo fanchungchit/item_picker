@@ -10,11 +10,13 @@ typedef ItemFilter<T> = bool Function(T item, String filter);
 typedef ItemBuilder<T> = Widget Function(BuildContext context, T item);
 typedef CheckboxItemBuilder<T> = Widget Function(
     BuildContext context, T item, bool checked);
+typedef AsyncItems<T> = Future<List<T>>;
 
 Future<T?> showAsyncItemPicker<T>({
   required BuildContext context,
+  BoxConstraints? constraints,
   bool autofocus = false,
-  required Future<List<T>> future,
+  required AsyncItems<T> future,
   OnItemPicked<T>? onItemPicked,
   ItemFilter<T>? itemFilter,
   ItemBuilder<T>? itemBuilder,
@@ -33,6 +35,7 @@ Future<T?> showAsyncItemPicker<T>({
                       child: CircularProgressIndicator.adaptive());
                 }
                 return ItemPicker<T>(
+                  constraints: constraints,
                   autofocus: autofocus,
                   items: snapshot.data!,
                   onItemPicked: onItemPicked,
@@ -46,6 +49,7 @@ Future<T?> showAsyncItemPicker<T>({
 
 Future<T?> showItemPicker<T>({
   required BuildContext context,
+  BoxConstraints? constraints,
   bool autofocus = false,
   required List<T> items,
   OnItemPicked<T>? onItemPicked,
@@ -56,6 +60,7 @@ Future<T?> showItemPicker<T>({
       context: context,
       builder: (context) => Dialog(
             child: ItemPicker<T>(
+              constraints: constraints,
               autofocus: autofocus,
               items: items,
               onItemPicked: onItemPicked,
@@ -68,12 +73,14 @@ Future<T?> showItemPicker<T>({
 class ItemPicker<T> extends StatefulWidget {
   const ItemPicker(
       {super.key,
+      this.constraints,
       this.autofocus = false,
       required this.items,
       this.onItemPicked,
       this.itemFilter,
       this.itemBuilder});
 
+  final BoxConstraints? constraints;
   final bool autofocus;
   final List<T> items;
   final OnItemPicked<T>? onItemPicked;
@@ -96,58 +103,61 @@ class _ItemPickerState<T> extends State<ItemPicker<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        if (widget.itemFilter != null)
-          TextField(
-            autofocus: widget.autofocus,
-            onChanged: (value) {
-              /// Debounce the filter
-              timer?.cancel();
-              timer = Timer(const Duration(milliseconds: 500), () {
-                setState(() {
-                  filterString = value;
+    return Container(
+      constraints: widget.constraints,
+      child: Column(
+        children: [
+          if (widget.itemFilter != null)
+            TextField(
+              autofocus: widget.autofocus,
+              onChanged: (value) {
+                /// Debounce the filter
+                timer?.cancel();
+                timer = Timer(const Duration(milliseconds: 500), () {
+                  setState(() {
+                    filterString = value;
+                  });
                 });
-              });
-            },
-            onSubmitted: (value) {
-              final item = widget.items
-                  .where((element) =>
-                      widget.itemFilter?.call(element, value) ?? false)
-                  .firstOrNull;
+              },
+              onSubmitted: (value) {
+                final item = widget.items
+                    .where((element) =>
+                        widget.itemFilter?.call(element, value) ?? false)
+                    .firstOrNull;
 
-              if (item != null) {
-                if (widget.onItemPicked == null) {
-                  return Navigator.pop(context, item);
+                if (item != null) {
+                  if (widget.onItemPicked == null) {
+                    return Navigator.pop(context, item);
+                  }
+                  widget.onItemPicked?.call(item);
                 }
-                widget.onItemPicked?.call(item);
-              }
-            },
-            decoration: const InputDecoration(
-              hintText: 'Search',
-              prefixIcon: Icon(Icons.search),
+              },
+              decoration: const InputDecoration(
+                hintText: 'Search',
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return InkWell(
+                    onTap: () {
+                      if (widget.onItemPicked == null) {
+                        return Navigator.pop(context, item);
+                      }
+                      widget.onItemPicked?.call(item);
+                    },
+                    child: widget.itemBuilder?.call(context, item) ??
+                        ListTile(
+                          title: Text(item.toString()),
+                        ));
+              },
             ),
           ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return InkWell(
-                  onTap: () {
-                    if (widget.onItemPicked == null) {
-                      return Navigator.pop(context, item);
-                    }
-                    widget.onItemPicked?.call(item);
-                  },
-                  child: widget.itemBuilder?.call(context, item) ??
-                      ListTile(
-                        title: Text(item.toString()),
-                      ));
-            },
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
