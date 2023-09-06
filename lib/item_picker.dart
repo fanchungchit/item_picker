@@ -28,11 +28,17 @@ Future<T?> showAsyncItemPicker<T>({
               future: future,
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return const Center(child: Text('Error'));
+                  return Container(
+                    constraints: constraints,
+                    child: const Center(child: Text('Error')),
+                  );
                 }
                 if (!snapshot.hasData) {
-                  return const Center(
-                      child: CircularProgressIndicator.adaptive());
+                  return Container(
+                    constraints: constraints,
+                    child: const Center(
+                        child: CircularProgressIndicator.adaptive()),
+                  );
                 }
                 return ItemPicker<T>(
                   constraints: constraints,
