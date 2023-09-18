@@ -168,12 +168,14 @@ Future<List<T>?> showItemsPicker<T>({
 }) {
   return showDialog(
       context: context,
-      builder: (context) => ItemsPicker<T>(
-            items: items,
-            initialItems: initialItems,
-            onItemsPicked: onItemsPicked,
-            itemFilter: itemFilter,
-            itemTitleBuilder: itemTitleBuilder,
+      builder: (context) => Dialog(
+            child: ItemsPicker<T>(
+              items: items,
+              initialItems: initialItems,
+              onItemsPicked: onItemsPicked,
+              itemFilter: itemFilter,
+              itemTitleBuilder: itemTitleBuilder,
+            ),
           ));
 }
 
