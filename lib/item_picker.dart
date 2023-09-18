@@ -12,6 +12,7 @@ typedef ItemBuilder<T> = Widget Function(BuildContext context, T item);
 typedef CheckboxItemBuilder<T> = Widget Function(
     BuildContext context, T item, bool checked);
 typedef AsyncItems<T> = Future<List<T>>;
+typedef ItemTitleBuilder<T> = Widget Function(BuildContext context, T item);
 
 Future<T?> showAsyncItemPicker<T>({
   required BuildContext context,
@@ -29,18 +30,6 @@ Future<T?> showAsyncItemPicker<T>({
             child: FutureBuilder<List<T>>(
               future: future,
               builder: (context, snapshot) {
-                // if (snapshot.hasError) {
-                //   return Container(
-                //       constraints: constraints,
-                //       child: const Center(child: Text('Error')));
-                // }
-                // if (!snapshot.hasData) {
-                //   return Container(
-                //     constraints: constraints,
-                //     child: const Center(
-                //         child: CircularProgressIndicator.adaptive()),
-                //   );
-                // }
                 return ItemPicker<T>(
                   constraints: constraints,
                   autofocus: autofocus,
@@ -118,7 +107,6 @@ class _ItemPickerState<T> extends State<ItemPicker<T>> {
             TextField(
               autofocus: widget.autofocus,
               onChanged: (value) {
-                /// Debounce the filter
                 timer?.cancel();
                 timer = Timer(const Duration(milliseconds: 500), () {
                   setState(() {
@@ -171,11 +159,12 @@ class _ItemPickerState<T> extends State<ItemPicker<T>> {
 
 Future<List<T>?> showItemsPicker<T>({
   required BuildContext context,
-  List<T> items = const [],
+  List<T>? items,
   List<T>? initialItems,
   OnItemsPicked<T>? onItemsPicked,
   ItemFilter<T>? itemFilter,
   CheckboxItemBuilder<T>? itemBuilder,
+  ItemTitleBuilder<T>? itemTitleBuilder,
 }) {
   return showDialog(
       context: context,
@@ -184,30 +173,36 @@ Future<List<T>?> showItemsPicker<T>({
             initialItems: initialItems,
             onItemsPicked: onItemsPicked,
             itemFilter: itemFilter,
-            itemBuilder: itemBuilder,
+            itemTitleBuilder: itemTitleBuilder,
           ));
 }
 
 class ItemsPicker<T> extends StatefulWidget {
-  const ItemsPicker(
-      {super.key,
-      this.items,
-      this.itemFilter,
-      this.initialItems,
-      this.onItemsPicked,
-      this.itemBuilder});
+  const ItemsPicker({
+    super.key,
+    this.items,
+    this.itemFilter,
+    this.initialItems,
+    this.onItemsPicked,
+    this.itemBuilder,
+    this.itemTitleBuilder,
+  });
 
   final List<T>? items;
   final ItemFilter<T>? itemFilter;
   final List<T>? initialItems;
   final OnItemsPicked<T>? onItemsPicked;
   final CheckboxItemBuilder<T>? itemBuilder;
+  final ItemTitleBuilder<T>? itemTitleBuilder;
 
   @override
   State<ItemsPicker<T>> createState() => _ItemsPickerState<T>();
 }
 
 class _ItemsPickerState<T> extends State<ItemsPicker<T>> {
+  final focusNode = FocusNode();
+  final controller = TextEditingController();
+
   late var pickedItems = widget.initialItems ?? [];
 
   String filterString = '';
@@ -220,14 +215,14 @@ class _ItemsPickerState<T> extends State<ItemsPicker<T>> {
 
   Timer? timer;
 
-  check(T item) => pickedItems.contains(item);
+  bool check(T item) => pickedItems.contains(item);
 
   set(T item) {
     setState(() {
       if (check(item)) {
-        pickedItems.add(item);
-      } else {
         pickedItems.remove(item);
+      } else {
+        pickedItems.add(item);
       }
     });
   }
@@ -242,13 +237,17 @@ class _ItemsPickerState<T> extends State<ItemsPicker<T>> {
             TextButton(
                 onPressed: () {
                   widget.onItemsPicked?.call(pickedItems);
-                  Navigator.pop(context, widget.initialItems);
+                  if (widget.onItemsPicked == null) {
+                    Navigator.pop(context, pickedItems);
+                  }
                 },
                 child: const Text('Done'))
           ],
         ),
         if (widget.itemFilter != null)
           TextField(
+            focusNode: focusNode,
+            controller: controller,
             onChanged: (value) {
               /// Debounce the filter
               timer?.cancel();
@@ -257,6 +256,12 @@ class _ItemsPickerState<T> extends State<ItemsPicker<T>> {
                   filterString = value;
                 });
               });
+            },
+            onSubmitted: (value) {
+              filterString = value;
+              if (items.isNotEmpty) set(items.first);
+              controller.clear();
+              focusNode.requestFocus();
             },
             decoration: const InputDecoration(
               hintText: 'Search',
@@ -274,7 +279,7 @@ class _ItemsPickerState<T> extends State<ItemsPicker<T>> {
                       CheckboxListTile.adaptive(
                           value: check(item),
                           onChanged: (value) => set(item),
-                          title: Text(item.toString())));
+                          title: widget.itemTitleBuilder?.call(context, item)));
             },
           ),
         ),

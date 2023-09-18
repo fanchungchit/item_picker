@@ -41,13 +41,31 @@ class _HomeState extends State<Home> {
   Widget itemBuilder(BuildContext context, Item item) =>
       ListTile(title: Text(item.name));
 
+  Widget itemsBuilder(BuildContext context, Item item, bool selected) =>
+      CheckboxListTile.adaptive(
+          value: selected, onChanged: (value) {}, title: Text(item.name));
+
   @override
   Widget build(BuildContext context) {
-    if (isItems) {}
+    if (isItems) {
+      return Scaffold(
+        body: ItemsPicker<Item>(
+          items: items,
+          itemFilter: itemFilter,
+          itemTitleBuilder: (context, item) => Text(item.name),
+          initialItems: [items[0], items[1]],
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Picked Item: ${pickedItem?.name ?? 'None'}'),
+        actions: [
+          IconButton(
+              onPressed: () => setState(() => isItems = !isItems),
+              icon: Icon(isItems ? Icons.list : Icons.grid_view))
+        ],
       ),
       body: ItemPicker(
           autofocus: true,
