@@ -24,7 +24,7 @@ Future<T?> showAsyncItemPicker<T>({
   ItemFilter<T>? itemFilter,
   ItemBuilder<T>? itemBuilder,
 }) {
-  return showDialog(
+  return showAdaptiveDialog(
       context: context,
       builder: (context) => Dialog(
             child: FutureBuilder<List<T>>(
@@ -166,7 +166,7 @@ Future<List<T>?> showItemsPicker<T>({
   CheckboxItemBuilder<T>? itemBuilder,
   ItemTitleBuilder<T>? itemTitleBuilder,
 }) {
-  return showDialog(
+  return showAdaptiveDialog(
       context: context,
       builder: (context) => Dialog(
             child: ItemsPicker<T>(
