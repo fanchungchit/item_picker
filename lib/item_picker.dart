@@ -94,7 +94,7 @@ class _ItemPickerState<T> extends State<ItemPicker<T>> {
 
   List<T> get items => widget.items
       .where(
-          (element) => widget.itemFilter?.call(element, filterString) ?? false)
+          (element) => widget.itemFilter?.call(element, filterString) ?? true)
       .toList();
 
   @override

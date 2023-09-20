@@ -70,7 +70,7 @@ class _HomeState extends State<Home> {
       body: ItemPicker(
           autofocus: true,
           items: items,
-          itemFilter: itemFilter,
+          // itemFilter: itemFilter,
           itemBuilder: itemBuilder,
           onItemPicked: (item) => setState(() => pickedItem = item)),
       floatingActionButton: FloatingActionButton.extended(
